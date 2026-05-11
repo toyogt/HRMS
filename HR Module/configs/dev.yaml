@@ -1,0 +1,59 @@
+env: "dev"
+log_level: "INFO"
+tz_name: "Asia/Calcutta"
+
+ingress_host: "0.0.0.0"
+ingress_port: 9100
+ingress_path: "/machine/realtime_glog"
+expected_request_code: "realtime_glog"
+
+direct_listener_host: "0.0.0.0"
+direct_listener_port: 8010
+direct_listener_path: "/machine/realtime_glog"
+direct_listener_jsonl_path: "var/direct_listener/punches.jsonl"
+
+db_url: "sqlite:///attendance.db"
+db_echo: false
+
+outbox_batch_size: 100
+outbox_poll_seconds: 1.0
+processing_lease_seconds: 120
+stale_processing_seconds: 300
+max_retries: 5
+backoff_base_seconds: 1.5
+backoff_max_seconds: 60.0
+backoff_jitter_seconds: 0.75
+
+outbound_url: "https://localhost:9443/api/attendance"
+outbound_api_key_header: "x-api-key"
+outbound_api_key: "change-me"
+outbound_timeout_seconds: 15.0
+outbound_verify_tls: false
+outbound_method: "POST"
+enforce_https: true
+enforce_post: true
+outbound_include_extended_fields: true
+outbound_device_name_default: "Realtime Device"
+outbound_device_no_default: "1"
+
+worker_health_file: "var/worker/health.json"
+
+machine_sdk_dll_path: "sdk_extracted/20211204-SBXPC-1/bin/SBXPCDLL64.dll"
+machine_sync_ip: ""
+machine_sync_port: 5005
+machine_sync_password: 0
+machine_sync_machine_number: 1
+machine_sync_timezone1: 1
+machine_sync_timezone2: 0
+machine_sync_group_no: 1
+auto_register_device_from_ingress: true
+
+middleware_api_key: "dev-middleware-key"
+middleware_bearer_token: "dev-middleware-token"
+agent_api_key: "dev-agent-key"
+agent_jwt_token: "dev-agent-jwt"
+webhook_hmac_secret: "dev-webhook-secret"
+webhook_timeout_seconds: 10.0
+webhook_dispatch_batch_size: 50
+cors_allowed_origins:
+  - "*"

@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Test/cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local runtime/state
+attendance.db
+*.db
+var/
+*.log
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Large archives / local drops
+*.rar
+*.zip
+*.7z
+*.tar
+*.gz
+
+# Vendor SDK bundles (keep out of git)
+sdk_extracted/

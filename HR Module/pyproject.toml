@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "attendance-relay"
+version = "1.0.0"
+description = "Realtime biometric attendance ingestion and outbox relay service"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.30.0",
+  "sqlalchemy>=2.0.32",
+  "httpx>=0.27.0",
+  "pydantic>=2.8.2",
+  "pyyaml>=6.0.2",
+  "python-dotenv>=1.0.1",
+  "trustme>=1.2.1",
+  "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+sqlserver = ["pyodbc>=5.1.0"]
+dev = ["pytest>=8.3.0", "ruff>=0.6.0"]
+
+[project.scripts]
+attendance-ingress = "attendance_relay.cli:run_ingress"
+attendance-gateway = "attendance_relay.cli:run_gateway"
+attendance-webhook-dispatch = "attendance_relay.cli:run_webhook_dispatch"
+attendance-worker = "attendance_relay.cli:run_worker"
+attendance-direct-listener = "attendance_relay.cli:run_direct_listener"
+attendance-simulator = "attendance_relay.simulator:main"
+attendance-e2e = "attendance_relay.e2e:main"
+attendance-import-master = "attendance_relay.master_import:main"
+attendance-sync-machine = "attendance_relay.machine_sync:main"
+attendance-agent-mock = "attendance_relay.agent_client:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

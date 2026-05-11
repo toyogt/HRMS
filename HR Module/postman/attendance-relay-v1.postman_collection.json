@@ -1,0 +1,662 @@
+{
+  "info": {
+    "_postman_id": "5d95d69a-10bd-4f5f-96c9-f071d40c4584",
+    "name": "Attendance Relay API - v1",
+    "description": "Collection for cloud employee CRUD, machine employee CRUD, and machine photo APIs.\n\nVariables:\n- base_url: API server base URL\n- api_key: x-api-key for /api/v1/* endpoints\n- machine_ip, machine_port, machine_number: target device\n- employee_code, user_id: current employee under test\n- photo_data_base64_8192: base64 payload for SetUserPhotoData (must represent 8192 bytes)\n\nDefault test flow:\n1) Cloud Employees -> Create Employee (With Machine Sync)\n2) Machine Employees -> Read Employee (Machine)\n3) Machine Photo -> Set User Photo Data\n4) Machine Photo -> Get User Photo Data\n5) Machine Employees -> Disable / Enable / Delete\n6) Cloud Employees -> Delete Employee",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Ingress health endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": "Middleware health endpoint (requires x-api-key)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cloud Employees",
+      "item": [
+        {
+          "name": "POST /api/v1/employees - Create Employee (With Machine Sync)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_code\": \"{{employee_code}}\",\n  \"employee_name\": \"Test-Nikhil\",\n  \"father_name\": \"\",\n  \"card_no\": \"000232\",\n  \"proximity_card_no\": \"\",\n  \"email_id\": \"\",\n  \"phone_no\": \"\",\n  \"department\": \"MACHINE_IMPORT\",\n  \"designation\": \"TEST_USER\",\n  \"branch_name\": \"\",\n  \"office_time_policy\": \"\",\n  \"date_of_birth\": \"\",\n  \"date_of_join\": \"\",\n  \"shift_start_date\": \"\",\n  \"shift_code\": \"\",\n  \"weekly_off\": \"\",\n  \"company_name\": \"\",\n  \"machine\": {\n    \"sync_to_machine\": true,\n    \"machine_ip\": \"{{machine_ip}}\",\n    \"machine_port\": {{machine_port}},\n    \"machine_number\": {{machine_number}},\n    \"user_id\": {{user_id}},\n    \"user_name\": \"Test-Nikhil\",\n    \"card_no\": \"000232\",\n    \"enable\": true,\n    \"e_machine_number\": 1,\n    \"backup_number\": 0\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/employees - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees?employee_code={{employee_code}}&limit=500",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees"
+              ],
+              "query": [
+                {
+                  "key": "employee_code",
+                  "value": "{{employee_code}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "500"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/employees/{employee_code}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees/{{employee_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                "{{employee_code}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/employees/{employee_code}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_name\": \"Test-Nikhil Updated\",\n  \"designation\": \"SUPERVISOR\",\n  \"department\": \"ACCOUNTS & FINANCE\",\n  \"card_no\": \"000232\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees/{{employee_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                "{{employee_code}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/employees/{employee_code}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees/{{employee_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                "{{employee_code}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Machine Employees",
+      "item": [
+        {
+          "name": "POST /api/machine/test-connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/test-connection",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "test-connection"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/employees/read-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"include_user_names\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "read-all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/employees/{employee_code}/read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"user_id\": {{user_id}},\n  \"include_user_name\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/{{employee_code}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "{{employee_code}}",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/machine/employees/{employee_code}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"user_id\": {{user_id}},\n  \"user_name\": \"Test-Nikhil\",\n  \"card_no\": \"000232\",\n  \"timezone1\": 1,\n  \"timezone2\": 0,\n  \"group_no\": 1,\n  \"enable\": true,\n  \"e_machine_number\": 1,\n  \"backup_number\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/{{employee_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "{{employee_code}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/employees/{employee_code}/disable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"user_id\": {{user_id}},\n  \"e_machine_number\": 1,\n  \"backup_number\": 0,\n  \"all_slots\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/{{employee_code}}/disable",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "{{employee_code}}",
+                "disable"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/employees/{employee_code}/enable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"user_id\": {{user_id}},\n  \"e_machine_number\": 1,\n  \"backup_number\": 0,\n  \"all_slots\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/{{employee_code}}/enable",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "{{employee_code}}",
+                "enable"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/machine/employees/{employee_code}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"user_id\": {{user_id}},\n  \"e_machine_number\": 1,\n  \"backup_number\": 0,\n  \"all_slots\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/{{employee_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "{{employee_code}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/employees/sync - Dry Run",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"employee_code\": \"{{employee_code}}\",\n  \"limit\": 2000,\n  \"dry_run\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/employees/sync",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "employees",
+                "sync"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Machine Photo",
+      "item": [
+        {
+          "name": "POST /api/machine/xml/execute - GetDeviceDetails",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"request_name\": \"GetDeviceDetails\",\n  \"parse_fields\": [\n    { \"tag\": \"ErrorCode\", \"value_type\": \"int\" },\n    { \"tag\": \"ErrStr\", \"value_type\": \"string\" }\n  ],\n  \"return_response_xml\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/xml/execute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "xml",
+                "execute"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/xml/execute - SetUserPhotoData",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"request_name\": \"SetUserPhotoData\",\n  \"fields\": [\n    { \"tag\": \"UserID\", \"value\": {{user_id}}, \"value_type\": \"long\" }\n  ],\n  \"binary_fields\": [\n    { \"tag\": \"PhotoData\", \"data_base64\": \"{{photo_data_base64_8192}}\" }\n  ],\n  \"parse_fields\": [\n    { \"tag\": \"ErrorCode\", \"value_type\": \"int\" },\n    { \"tag\": \"ErrStr\", \"value_type\": \"string\" }\n  ],\n  \"return_response_xml\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/xml/execute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "xml",
+                "execute"
+              ]
+            },
+            "description": "photo_data_base64_8192 must be base64 for exactly 8192 bytes (padded if needed)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/machine/xml/execute - GetUserPhotoData",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machine_ip\": \"{{machine_ip}}\",\n  \"machine_port\": {{machine_port}},\n  \"machine_number\": {{machine_number}},\n  \"request_name\": \"GetUserPhotoData\",\n  \"fields\": [\n    { \"tag\": \"UserID\", \"value\": {{user_id}}, \"value_type\": \"long\" }\n  ],\n  \"parse_fields\": [\n    { \"tag\": \"ErrorCode\", \"value_type\": \"int\" },\n    { \"tag\": \"ErrStr\", \"value_type\": \"string\" }\n  ],\n  \"parse_binary_fields\": [\n    { \"tag\": \"PhotoData\", \"length\": 8192 }\n  ],\n  \"return_response_xml\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/machine/xml/execute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine",
+                "xml",
+                "execute"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:9100"
+    },
+    {
+      "key": "api_key",
+      "value": "dev-middleware-key"
+    },
+    {
+      "key": "machine_ip",
+      "value": "192.168.001.019"
+    },
+    {
+      "key": "machine_port",
+      "value": "5005"
+    },
+    {
+      "key": "machine_number",
+      "value": "1"
+    },
+    {
+      "key": "employee_code",
+      "value": "232"
+    },
+    {
+      "key": "user_id",
+      "value": "232"
+    },
+    {
+      "key": "photo_data_base64_8192",
+      "value": "REPLACE_WITH_BASE64_OF_8192_BYTES"
+    }
+  ]
+}

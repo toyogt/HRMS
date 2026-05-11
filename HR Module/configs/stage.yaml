@@ -1,0 +1,50 @@
+env: "stage"
+log_level: "INFO"
+tz_name: "Asia/Calcutta"
+
+ingress_host: "0.0.0.0"
+ingress_port: 9100
+ingress_path: "/machine/realtime_glog"
+expected_request_code: "realtime_glog"
+
+direct_listener_host: "0.0.0.0"
+direct_listener_port: 8010
+direct_listener_path: "/machine/realtime_glog"
+direct_listener_jsonl_path: "var/direct_listener/punches.jsonl"
+
+db_url: "mssql+pyodbc://USER:PASSWORD@SERVER/DBNAME?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+db_echo: false
+
+outbox_batch_size: 200
+outbox_poll_seconds: 1.0
+processing_lease_seconds: 180
+stale_processing_seconds: 420
+max_retries: 5
+backoff_base_seconds: 2.0
+backoff_max_seconds: 90.0
+backoff_jitter_seconds: 1.0
+
+outbound_url: "https://third-party.example.com/api/attendance"
+outbound_api_key_header: "x-api-key"
+outbound_api_key: "replace-in-secret-store"
+outbound_timeout_seconds: 20.0
+outbound_verify_tls: true
+outbound_method: "POST"
+enforce_https: true
+enforce_post: true
+outbound_include_extended_fields: true
+outbound_device_name_default: ""
+outbound_device_no_default: ""
+
+worker_health_file: "var/worker/health.json"
+auto_register_device_from_ingress: true
+
+middleware_api_key: "replace-in-secret-store"
+middleware_bearer_token: "replace-in-secret-store"
+agent_api_key: "replace-in-secret-store"
+agent_jwt_token: "replace-in-secret-store"
+webhook_hmac_secret: "replace-in-secret-store"
+webhook_timeout_seconds: 10.0
+webhook_dispatch_batch_size: 100
+cors_allowed_origins:
+  - "*"
