@@ -8,9 +8,13 @@
   - Re-download + extract the SBXPC SDK only if SBXPCDLL64.dll is missing.
   - Restart the supervisor, run /health, run /api/machine/test-connection.
 
+.PARAMETER SdkPath
+  Optional. Local path (zip or extracted folder) to recover the SDK from when
+  it is missing. Takes precedence over -SdkUrl.
+
 .PARAMETER SdkUrl
-  Optional. Only used if the SDK is missing on disk. If omitted and the SDK
-  is missing, this script bails out instead of fetching.
+  Optional. URL to fetch the SDK from when it is missing and no -SdkPath was
+  given. If both are omitted and the SDK is missing, this script just warns.
 
 .PARAMETER InstallPath
   Root folder of the repo. Default: C:\HRMS_Middleware.
@@ -20,9 +24,11 @@
 
 .EXAMPLE
   PS> .\Deploy-Middleware.ps1
-  PS> .\Deploy-Middleware.ps1 -SdkUrl "https://drive.google.com/file/d/<FILE_ID>/view"
+  PS> .\Deploy-Middleware.ps1 -SdkPath "D:\sdk_BIN_ONLY.zip"
+  PS> .\Deploy-Middleware.ps1 -SdkUrl  "https://drive.google.com/file/d/<FILE_ID>/view"
 #>
 param(
+  [string]$SdkPath,
   [string]$SdkUrl,
   [string]$InstallPath = "C:\HRMS_Middleware",
   [string]$Branch      = "develop",
@@ -105,35 +111,47 @@ if ($beforeReq -ne $afterReq) {
 Write-Step 4 "Ensure SDK present"
 
 $targetDll = Join-Path $Project "sdk_extracted\20211204-SBXPC-1\bin\SBXPCDLL64.dll"
+$sdkRoot   = Join-Path $Project "sdk_extracted"
+
 if (Test-Path $targetDll) {
-  Write-Host "  SDK already in place ($($targetDll))" -ForegroundColor Green
-} else {
-  if (-not $SdkUrl) {
-    Write-Host "  SDK is missing and no -SdkUrl provided." -ForegroundColor Yellow
-    Write-Host "  Re-run with: .\Deploy-Middleware.ps1 -SdkUrl 'https://drive.google.com/file/d/<id>/view'"
+  Write-Host "  SDK already in place ($targetDll)" -ForegroundColor Green
+} elseif ($SdkPath) {
+  if (-not (Test-Path $SdkPath)) { throw "-SdkPath '$SdkPath' does not exist." }
+  $item = Get-Item $SdkPath
+  if ($item.PSIsContainer) {
+    $source = Get-ChildItem $item.FullName -Recurse -Filter "SBXPCDLL64.dll" -ErrorAction SilentlyContinue |
+              Select-Object -First 1
+    if (-not $source) { throw "Folder '$SdkPath' has no SBXPCDLL64.dll." }
+    $destBin = Join-Path $sdkRoot "20211204-SBXPC-1\bin"
+    New-Item -ItemType Directory -Path $destBin -Force | Out-Null
+    Copy-Item (Join-Path (Split-Path $source.FullName -Parent) "*") $destBin -Recurse -Force
   } else {
-    Write-Host "  SDK missing -- downloading..."
-    $sdkZip = Join-Path $env:TEMP "sdk_BIN_ONLY.zip"
-    if (Test-Path $sdkZip) { Remove-Item $sdkZip -Force }
-    $download = Resolve-DownloadUrl $SdkUrl
-    Invoke-WebRequest -Uri $download -OutFile $sdkZip -UseBasicParsing
+    Expand-Archive -Path $item.FullName -DestinationPath $Project -Force
+  }
+  if (-not (Test-Path $targetDll)) { throw "Placed SDK but SBXPCDLL64.dll is not at $targetDll." }
+  Write-Host "  installed from local: $targetDll" -ForegroundColor Green
+} elseif ($SdkUrl) {
+  Write-Host "  SDK missing -- downloading..."
+  $sdkZip   = Join-Path $env:TEMP "sdk_BIN_ONLY.zip"
+  if (Test-Path $sdkZip) { Remove-Item $sdkZip -Force }
+  $download = Resolve-DownloadUrl $SdkUrl
+  Invoke-WebRequest -Uri $download -OutFile $sdkZip -UseBasicParsing
 
-    if ((Get-Item $sdkZip).Length -lt 200KB) {
-      $head = Get-Content -LiteralPath $sdkZip -TotalCount 1
-      if ($head -match "<html|<!DOCTYPE") {
-        throw "Download was a Google Drive HTML page. Check share permissions."
-      }
-    }
-
-    Expand-Archive -Path $sdkZip -DestinationPath $Project -Force
-    Remove-Item $sdkZip -Force
-
-    if (Test-Path $targetDll) {
-      Write-Host "  extracted OK -> $targetDll" -ForegroundColor Green
-    } else {
-      throw "Extract finished but SBXPCDLL64.dll is not at the expected path."
+  if ((Get-Item $sdkZip).Length -lt 200KB) {
+    $head = Get-Content -LiteralPath $sdkZip -TotalCount 1
+    if ($head -match "<html|<!DOCTYPE") {
+      throw "Download was a Google Drive HTML page. Check share permissions."
     }
   }
+  Expand-Archive -Path $sdkZip -DestinationPath $Project -Force
+  Remove-Item $sdkZip -Force
+  if (-not (Test-Path $targetDll)) { throw "Extract done but SBXPCDLL64.dll missing at $targetDll." }
+  Write-Host "  extracted OK -> $targetDll" -ForegroundColor Green
+} else {
+  Write-Host "  SDK is missing and no -SdkPath / -SdkUrl provided." -ForegroundColor Yellow
+  Write-Host "  Re-run with one of:"
+  Write-Host "    .\Deploy-Middleware.ps1 -SdkPath 'D:\sdk_BIN_ONLY.zip'"
+  Write-Host "    .\Deploy-Middleware.ps1 -SdkUrl  'https://drive.google.com/file/d/<id>/view'"
 }
 
 

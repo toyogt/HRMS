@@ -10,9 +10,16 @@
     any HTTPS URL) and extracts it into HR Module/sdk_extracted/.
   - Restarts the supervisor and runs a health + device test-connection check.
 
+.PARAMETER SdkPath
+  Local path to the SBXPC SDK zip on disk (e.g. a USB, a network share, or
+  the file copied next to this script). Preferred over -SdkUrl when both are
+  given. The path can be a .zip OR an already-extracted folder that
+  contains "20211204-SBXPC-1\bin\SBXPCDLL64.dll".
+
 .PARAMETER SdkUrl
   HTTPS URL to the SBXPC SDK zip (sdk_BIN_ONLY.zip).
   Accepts both Google Drive share links and direct download links.
+  Used only when -SdkPath is not provided.
 
 .PARAMETER InstallPath
   Root folder where the repo will live. Default: C:\HRMS_Middleware.
@@ -28,11 +35,15 @@
   Pass to also install + start a Cloudflare quick tunnel.
 
 .EXAMPLE
-  PS> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-  PS> .\Setup-Middleware-PC.ps1 -SdkUrl "https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing" -EnableCloudflareTunnel
+  # Local zip (no internet for the SDK):
+  PS> .\Setup-Middleware-PC.ps1 -SdkPath "D:\sdk_BIN_ONLY.zip" -EnableCloudflareTunnel
+
+.EXAMPLE
+  # Google Drive URL:
+  PS> .\Setup-Middleware-PC.ps1 -SdkUrl "https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing"
 #>
 param(
-  [Parameter(Mandatory=$true)]
+  [string]$SdkPath,
   [string]$SdkUrl,
 
   [string]$InstallPath = "C:\HRMS_Middleware",
@@ -41,6 +52,10 @@ param(
   [string]$ApiKey      = "dev-middleware-key",
   [switch]$EnableCloudflareTunnel
 )
+
+if (-not $SdkPath -and -not $SdkUrl) {
+  throw "You must provide either -SdkPath (local zip/folder) or -SdkUrl (download URL)."
+}
 
 $ErrorActionPreference = "Stop"
 
@@ -126,32 +141,80 @@ Push-Location $Project
 Pop-Location
 
 
-Write-Step 4 "Download SBXPC SDK zip"
-
-$sdkZip = Join-Path $env:TEMP "sdk_BIN_ONLY.zip"
-if (Test-Path $sdkZip) { Remove-Item $sdkZip -Force }
-
-Get-FileFromUrl -url $SdkUrl -outPath $sdkZip
-
-
-Write-Step 5 "Extract SDK into the project"
+Write-Step 4 "Obtain SBXPC SDK"
 
 $targetDll = Join-Path $Project "sdk_extracted\20211204-SBXPC-1\bin\SBXPCDLL64.dll"
 $sdkRoot   = Join-Path $Project "sdk_extracted"
 
-if (Test-Path $sdkRoot) {
-  Write-Host "  removing stale $sdkRoot"
-  Remove-Item -Recurse -Force $sdkRoot
+$useLocal = $false
+$localZip = $null
+
+if ($SdkPath) {
+  if (-not (Test-Path $SdkPath)) {
+    throw "-SdkPath '$SdkPath' does not exist."
+  }
+  $useLocal = $true
+  $item = Get-Item $SdkPath
+  if ($item.PSIsContainer) {
+    # already-extracted folder
+    Write-Host "  using local folder: $($item.FullName)"
+    $sourceDll = Get-ChildItem $item.FullName -Recurse -Filter "SBXPCDLL64.dll" -ErrorAction SilentlyContinue |
+                 Select-Object -First 1
+    if (-not $sourceDll) {
+      throw "Folder '$SdkPath' does not contain SBXPCDLL64.dll anywhere inside it."
+    }
+    if (Test-Path $sdkRoot) {
+      Write-Host "  removing stale $sdkRoot"
+      Remove-Item -Recurse -Force $sdkRoot
+    }
+    $destBin = Join-Path $sdkRoot "20211204-SBXPC-1\bin"
+    New-Item -ItemType Directory -Path $destBin -Force | Out-Null
+    $binSource = Split-Path $sourceDll.FullName -Parent
+    Copy-Item "$binSource\*" $destBin -Recurse -Force
+    Write-Host "  copied $binSource -> $destBin"
+  } else {
+    Write-Host "  using local zip: $($item.FullName)"
+    $localZip = $item.FullName
+  }
+} else {
+  Write-Host "  downloading from URL..."
+  $localZip = Join-Path $env:TEMP "sdk_BIN_ONLY.zip"
+  if (Test-Path $localZip) { Remove-Item $localZip -Force }
+  Get-FileFromUrl -url $SdkUrl -outPath $localZip
 }
 
-Expand-Archive -Path $sdkZip -DestinationPath $Project -Force
-Remove-Item $sdkZip -Force
+if ($localZip) {
+  if (Test-Path $sdkRoot) {
+    Write-Host "  removing stale $sdkRoot"
+    Remove-Item -Recurse -Force $sdkRoot
+  }
+  Expand-Archive -Path $localZip -DestinationPath $Project -Force
+  if (-not $useLocal) { Remove-Item $localZip -Force }
+}
+
+
+Write-Step 5 "Verify SDK landed at expected path"
 
 if (Test-Path $targetDll) {
   $info = Get-Item $targetDll
   Write-Host ("  OK -> SBXPCDLL64.dll ({0:N2} MB)" -f ($info.Length / 1MB)) -ForegroundColor Green
 } else {
-  throw "SBXPCDLL64.dll not found at $targetDll after extract. The zip's internal layout is wrong."
+  # Try to recover: maybe the zip has a different top-level folder
+  $found = Get-ChildItem $sdkRoot -Recurse -Filter "SBXPCDLL64.dll" -ErrorAction SilentlyContinue |
+           Select-Object -First 1
+  if ($found) {
+    Write-Host "  SBXPCDLL64.dll found at unexpected path: $($found.FullName)" -ForegroundColor Yellow
+    $destBin = Join-Path $sdkRoot "20211204-SBXPC-1\bin"
+    New-Item -ItemType Directory -Path $destBin -Force | Out-Null
+    Copy-Item (Split-Path $found.FullName -Parent) $destBin -Recurse -Force
+    if (Test-Path $targetDll) {
+      Write-Host "  recovered -> $targetDll" -ForegroundColor Green
+    } else {
+      throw "Could not place SBXPCDLL64.dll at $targetDll."
+    }
+  } else {
+    throw "SBXPCDLL64.dll not found in $sdkRoot. The zip/folder layout is wrong."
+  }
 }
 
 
