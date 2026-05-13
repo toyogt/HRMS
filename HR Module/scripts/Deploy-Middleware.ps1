@@ -53,6 +53,21 @@ function Resolve-DownloadUrl([string]$url) {
   return $url
 }
 
+function Get-ConfiguredIngressPort {
+  param(
+    [string]$ConfigPath,
+    [int]$Fallback = 9100
+  )
+
+  if (-not (Test-Path $ConfigPath)) { return $Fallback }
+  $content = Get-Content -Raw $ConfigPath
+  $match = [Regex]::Match($content, '(?m)^\s*ingress_port\s*:\s*(\d+)\s*$')
+  if ($match.Success) {
+    return [int]$match.Groups[1].Value
+  }
+  return $Fallback
+}
+
 
 $Repo    = Join-Path $InstallPath "HRMS"
 $Project = Join-Path $Repo "HR Module"
@@ -158,17 +173,19 @@ if (Test-Path $targetDll) {
 Write-Step 5 "Restart middleware"
 
 Start-ScheduledTask -TaskName "HRMS-Middleware-Supervisor"
+$configPath = Join-Path $Project "configs\dev.yaml"
+$port = Get-ConfiguredIngressPort -ConfigPath $configPath -Fallback 9100
 
 $ok = $false
 for ($i = 1; $i -le 20; $i++) {
   try {
-    $resp = Invoke-RestMethod http://127.0.0.1:9100/health -TimeoutSec 2
+    $resp = Invoke-RestMethod "http://127.0.0.1:$port/health" -TimeoutSec 2
     Write-Host ("  ready after {0}s: {1}" -f ($i*2), ($resp | ConvertTo-Json -Compress)) -ForegroundColor Green
     $ok = $true; break
   } catch { Start-Sleep -Seconds 2 }
 }
 if (-not $ok) {
-  Write-Host "  /health did not respond after 40s; check var/logs/gateway.err.log." -ForegroundColor Red
+  Write-Host "  /health did not respond on port $port after 40s; check var/logs/gateway.err.log." -ForegroundColor Red
   exit 1
 }
 
@@ -183,7 +200,7 @@ $tc = curl.exe -s --max-time 15 `
         -H "x-api-key: $ApiKey" `
         -H "Content-Type: application/json" `
         --data-binary "@$bodyFile" `
-        "http://127.0.0.1:9100/api/machine/test-connection"
+        "http://127.0.0.1:$port/api/machine/test-connection"
 Write-Host "  $tc"
 
 Write-Host ""

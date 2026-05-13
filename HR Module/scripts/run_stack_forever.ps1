@@ -50,7 +50,9 @@ function Start-ManagedProcess {
         [string]$ConfigPath
     )
 
-    $args = @($ScriptPath, "--config", $ConfigPath)
+    # Quote config path so Start-Process does not split "HR Module" into 2 args.
+    $quotedConfig = '"' + $ConfigPath + '"'
+    $args = @($ScriptPath, "--config", $quotedConfig)
     $stdout = Join-Path $logDir "$Name.out.log"
     $stderr = Join-Path $logDir "$Name.err.log"
     $proc = Start-Process `
