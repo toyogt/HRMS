@@ -1,0 +1,8 @@
+
+# Local virtual env / kernel folders
+HR Module/remote-kernel/
+HR Module/.venv/
+HR Module/sdk_extracted/
+HR Module/var/
+*.log
+configs/local.yaml
